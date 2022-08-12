@@ -1,0 +1,30 @@
+{
+  "profiler_config" : {
+    "enable_profiling" : true,
+    "enable_tracing" : false
+  },
+
+  "subgraph:decode" : {
+    "config_path" : "../configs/decode_config.json",
+    "next_modules" : ["subgraph:object_detection"]
+  },
+
+  "subgraph:object_detection" : {
+    "config_path" : "../configs/yolov5_object_detection_mlu220.json",
+    "next_modules" : ["subgraph:object_tracking"]
+  },
+
+  "subgraph:object_tracking" : {
+    "config_path" : "../configs/object_tracking_mlu220.json",
+    "next_modules" : ["subgraph:osd_label_map_coco"]
+  },
+
+  "subgraph:osd_label_map_coco" : {
+    "config_path" : "../configs/osd_configs/osd_label_map_coco.json",
+    "next_modules" : ["subgraph:sinker"]
+  },
+
+  "subgraph:sinker" : {
+    "config_path" : "../configs/sinker_configs/rtsp.json"
+  }
+}

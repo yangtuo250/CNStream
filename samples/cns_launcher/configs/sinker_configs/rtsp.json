@@ -8,7 +8,8 @@
       "port" : 9554,
       "view_cols" : 1,
       "view_rows" : 1,
-      "device_id" : 0
+      "device_id" : 0,
+      "frame_rate": 20
     }
   }
 }

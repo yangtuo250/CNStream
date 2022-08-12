@@ -2,7 +2,7 @@
   "detector" : {
     "class_name" : "cnstream::Inferencer2",
     "parallelism" : 2,
-    "max_input_queue_size" : 20,
+    "max_input_queue_size" : 26,
     "custom_params" : {
       "model_path" : "../../../data/models/yolov5_b4c4_rgb_mlu220.cambricon",
       "func_name" : "subnet0",
@@ -14,9 +14,10 @@
       "keep_aspect_ratio" : "true",
       "model_input_pixel_format" : "RGB24",
       "batching_timeout" : 100,
-      "threshold" : 0.6,
+      "threshold" : 0.2,
       "engine_num" : 2,
-      "device_id" : 0
+      "device_id" : 0,
+      "show_stats": "true"
     }
   }
 }

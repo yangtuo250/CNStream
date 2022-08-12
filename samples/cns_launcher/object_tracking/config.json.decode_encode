@@ -1,0 +1,15 @@
+{
+  "profiler_config" : {
+    "enable_profiling" : true,
+    "enable_tracing" : false
+  },
+
+  "subgraph:decode" : {
+    "config_path" : "../configs/decode_config.json",
+    "next_modules" : ["subgraph:sinker"]
+  },
+
+  "subgraph:sinker" : {
+    "config_path" : "../configs/sinker_configs/rtsp.json"
+  }
+}

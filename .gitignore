@@ -2,7 +2,9 @@
 build
 lib
 bin
-3rdparty/live555
+3rdparty
 tags
 .vscode
 .vimrc
+data/models
+tools/live

@@ -88,16 +88,16 @@ LABEL_PATH=${MODELS_DIR}/label_map_coco.txt
 REMOTE_LABEL_PATH=http://video.cambricon.com/models/labels/label_map_coco.txt
 Download ${LABEL_PATH} ${REMOTE_LABEL_PATH}
 
-# generate config file with selected sinker and selected platform
-pushd ${CURRENT_DIR}
-    sed 's/__PLATFORM_PLACEHOLDER__/'"${1}"'/g;s/__NN__/'"${3}"'/g' config_template.json | sed 's/__SINKER_PLACEHOLDER__/'"${2}"'.json/g' &> config.json
-popd
+# # generate config file with selected sinker and selected platform
+# pushd ${CURRENT_DIR}
+#     sed 's/__PLATFORM_PLACEHOLDER__/'"${1}"'/g;s/__NN__/'"${3}"'/g' config_template.json | sed 's/__SINKER_PLACEHOLDER__/'"${2}"'.json/g' &> config.json
+# popd
 
 ${SAMPLES_DIR}/generate_file_list.sh
 mkdir -p output
 ${SAMPLES_DIR}/bin/cns_launcher  \
     --data_path ${SAMPLES_DIR}/files.list_video \
-    --src_frame_rate 25   \
+    --src_frame_rate 40   \
     --config_fname ${CURRENT_DIR}/config.json \
     --logtostderr=true
 
