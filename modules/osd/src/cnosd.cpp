@@ -142,10 +142,6 @@ void CnOsd::DrawLabel(cv::Mat image, const CNInferObjsPtr& objs_holder, std::vec
             color = colors_[label_id];
         }
 
-        std::string text;
-        if (LabelIsFound(label_id)) {
-            text = labels_[label_id];
-        }
         // Draw Detection window
         LOGD(OSD) << "Draw Bounding Box: "
                   << "top_left: (" << top_left.x << "," << top_left.y << ") bottom_right:(" << bottom_right.x << ","
@@ -153,17 +149,19 @@ void CnOsd::DrawLabel(cv::Mat image, const CNInferObjsPtr& objs_holder, std::vec
         DrawBox(image, top_left, bottom_right, color);
 
         // Draw Text label + score + track id
-        // std::string text;
-        // if (LabelIsFound(label_id)) {
-        //   text = labels_[label_id];
-        // } else {
-        //   text = "Label not found, id = " + std::to_string(label_id);
-        // }
+        std::string text;
+        if (LabelIsFound(label_id)) {
+            text = labels_[label_id];
+        } else {
+            text = "Label not found, id = " + std::to_string(label_id);
+        }
         text += " " + FloatToString(object->score);
         // for mono depth estimation
         if (object->collection.HasValue("distance"))
             text += " " + FloatToString(object->collection.Get<float>("distance")) + "m";
         if (object->collection.HasValue("height")) text += " " + FloatToString(object->collection.Get<float>("height")) + "m";
+        if (object->collection.HasValue("temperature"))
+            text += " " + FloatToString(object->collection.Get<float>("temperature")) + "C";
 
         if (!object->track_id.empty() && object->track_id != "-1") {
             text += " track_id: " + object->track_id;

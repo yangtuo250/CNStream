@@ -8,3 +8,4 @@ tags
 .vimrc
 data/models
 tools/live
+tools/libyuv

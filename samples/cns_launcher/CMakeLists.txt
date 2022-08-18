@@ -70,6 +70,10 @@ include_directories(${GFLAGS_INCLUDE_DIRS})
 include(${CNSTREAM_ROOT_DIR}/cmake/FindGlog.cmake)
 include_directories(${GLOG_INCLUDE_DIRS})
 
+# ---[ libcurl
+include_directories(${CNSTREAM_ROOT_DIR}/3rdparty/curl/include)
+FILE(GLOB CURL_LIBS "${CNSTREAM_ROOT_DIR}/3rdparty/curl/lib/libcurl.so.4")
+
 # ---[ modules include dirs
 include_directories(${CNSTREAM_ROOT_DIR}/modules)
 include_directories(${CNSTREAM_ROOT_DIR}/modules/util/include)
@@ -99,6 +103,7 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/../common/preprocess preprocess
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/../common/postprocess postprocess_srcs)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/../common/obj_filter obj_filter_srcs)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/../common/cns_openpose cns_openpose_srcs)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/../common/thermal thermal_srcs)
 if(build_kafka)
   aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/../common/kafka_handler kafka_handler_srcs)
 endif()
@@ -125,12 +130,12 @@ endif()
 
 # ---[ add targets
 set(EXECUTABLE_OUTPUT_PATH ${SAMPLES_ROOT_DIR}/bin)
-add_executable(cns_launcher ${srcs} ${common_srcs} ${preprocess_srcs} ${postprocess_srcs} ${obj_filter_srcs} ${cns_openpose_srcs} ${kafka_handler_srcs})
+add_executable(cns_launcher ${srcs} ${common_srcs} ${preprocess_srcs} ${postprocess_srcs} ${obj_filter_srcs} ${cns_openpose_srcs} ${kafka_handler_srcs} ${thermal_srcs})
 add_sanitizers(cns_launcher)
 if(NOT "${SAMPLES_DEPENDENCIES} " STREQUAL " ")
   add_dependencies(cns_launcher ${SAMPLES_DEPENDENCIES})
 endif()
-target_link_libraries(cns_launcher cnstream_va cnstream_core easydk ${OpenCV_LIBS} ${GFLAGS_LIBRARIES} ${GLOG_LIBRARIES} pthread dl)
+target_link_libraries(cns_launcher cnstream_va cnstream_core easydk ${OpenCV_LIBS} ${GFLAGS_LIBRARIES} ${GLOG_LIBRARIES} ${CURL_LIBS} pthread dl)
 
 if(HAVE_MODULES_CONTRIB)
   set(CMAKE_EXE_LINKER_FLAGS "-Wl,--no-as-needed")

@@ -18,6 +18,7 @@
       "engine_num": 2,
       "device_id": 0,
       "show_stats": "true",
+      "infer_interval": 2,
       "custom_postproc_params": {
         "camera_internal_param": "3121.7303,0.0,1938.391,0.0,3242.884,1072.597,0.0,0.0,1.0",
         "camera_extrinsic_param": "-0.707106781,-0.707106781,0.0,0.0,0.0,0.0,1.0,2.25,-0.707106781,0.707106781,0.0,0.0,0.0,0.0,0.0,1.0",

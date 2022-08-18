@@ -11,6 +11,11 @@
 
   "subgraph:object_detection" : {
     "config_path" : "../configs/yolov5_object_detection_mlu220_mono.json",
+    "next_modules" : ["subgraph:thermal_align"]
+  },
+
+  "subgraph:thermal_align" : {
+    "config_path" : "../configs/thermal_align.json",
     "next_modules" : ["subgraph:osd_label_map_coco"]
   },
 
