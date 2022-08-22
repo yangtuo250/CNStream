@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <chrono>
+#include <future>
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -76,12 +77,18 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
             return false;
         }
         // starting thermal data acquiring thread
-        std::thread thread(&ThermalAlign::fetchThermalData, this);
-        thread.detach();
+        running_.store(true);
+        curlThread = std::thread(&ThermalAlign::fetchThermalData, this);
 
         return true;
     }
-    void Close() override {}
+    void Close() override
+    {
+        running_.store(false);
+        if (curlThread.joinable()) {
+            curlThread.join();
+        }
+    }
     int Process(std::shared_ptr<cnstream::CNFrameInfo> package) override
     {
         auto frame = package->collection.Get<cnstream::CNDataFramePtr>(cnstream::kCNDataFrameTag);
@@ -92,7 +99,7 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
             return 0;
         }
 
-        int64_t frameTimeMillisecond = package->timestamp / 100 - frameDelayMilliseconds;
+        int64_t frameTimeMillisecond = package->timestamp / 90 - frameDelayMilliseconds;  // 1/90000pts(1/tbn)*1000ms/s
         // std::cout << "[Process DEBUG] Frame time: " << frameTimeMillisecond << "ms" << std::endl;
         sensorDataMatrix frameTempMatrix(thermalSensorHeight, std::vector<float>(thermalSensorWidth, 0.));
         if (!getTempMatrixByTime(frameTimeMillisecond, frameTempMatrix)) {
@@ -124,6 +131,8 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
     std::queue<sensorData> thermalDatas;
     std::string strUrl, strUserPwd;
     std::mutex mtx;
+    std::thread curlThread;
+    std::atomic<bool> running_;
     std::chrono::system_clock::time_point timeStart;
     int maxQueueSize;
     int thermalSensorHeight, thermalSensorWidth;
@@ -141,10 +150,10 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
 
         return nmemb;
     }
-    
+
     /**
      * @brief thermal data main function
-     * 
+     *
      */
     void fetchThermalData()
     {
@@ -168,7 +177,7 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
         curl_easy_setopt(pCurlHandle, CURLOPT_HTTPHEADER, headers);
 
         timeStart = std::chrono::system_clock::now();
-        while (1) {
+        while (running_.load()) {
             CURLcode nRet = curl_easy_perform(pCurlHandle);
             int64_t currentTime = getCurrentMillisecond();
             if (0 == nRet) {
@@ -203,15 +212,17 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
             }
         }
         curl_easy_cleanup(pCurlHandle);
+
+        return;
     }
 
     /**
      * @brief abstract thermal data from all response data
-     * 
+     *
      * @param data full response data
      * @param result thermal data
-     * @return true 
-     * @return false 
+     * @return true
+     * @return false
      */
     bool getThermalValueStr(std::string& data, std::string& result)
     {
@@ -270,7 +281,7 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
 
     /**
      * @brief find nearest temperature matrix by time
-     * 
+     *
      * @param timeMillisecond frame time
      * @param tempMatrix temperature matrix
      * @return true succeed

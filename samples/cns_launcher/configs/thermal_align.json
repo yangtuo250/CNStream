@@ -2,7 +2,7 @@
   "thermal_align": {
     "class_name": "cnstream::ThermalAlign",
     "parallelism": 1,
-    "max_input_queue_size": 20,
+    "max_input_queue_size": 26,
     "custom_params": {
       "get_thermal_data_url": "http://${IP}:80/ISAPI/Thermal/channels/2/thermometry/jpegPicWithAppendData?format=json",
       "user_and_passwd": "${USER_NAME}:${PASSWD}",
