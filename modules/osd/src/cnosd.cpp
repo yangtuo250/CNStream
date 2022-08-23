@@ -155,11 +155,13 @@ void CnOsd::DrawLabel(cv::Mat image, const CNInferObjsPtr& objs_holder, std::vec
         } else {
             text = "Label not found, id = " + std::to_string(label_id);
         }
-        text += " " + FloatToString(object->score);
+        // text += " " + FloatToString(object->score);
         // for mono depth estimation
         if (object->collection.HasValue("distance"))
-            text += " " + FloatToString(object->collection.Get<float>("distance")) + "m";
-        if (object->collection.HasValue("height")) text += " " + FloatToString(object->collection.Get<float>("height")) + "m";
+            text += " d:" + FloatToString(object->collection.Get<float>("distance")) + "m";
+        if (object->collection.HasValue("height"))
+            text += " h:" + FloatToString(object->collection.Get<float>("height")) + "m";
+        if (object->collection.HasValue("width")) text += " w:" + FloatToString(object->collection.Get<float>("width")) + "m";
         if (object->collection.HasValue("temperature"))
             text += " " + FloatToString(object->collection.Get<float>("temperature")) + "C";
 

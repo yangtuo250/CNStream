@@ -5,6 +5,7 @@
       "reuse_cndec_buf" : "true",
       "output_type" : "mlu",
       "decoder_type" : "mlu",
+      "output_buf_number" : 4,
       "output_buf_number" : 26,
       "apply_stride_align_for_scaler": true,
       "device_id" : 0

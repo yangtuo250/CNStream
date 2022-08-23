@@ -42,7 +42,7 @@ class VideoPostprocYolov5Mono : public cnstream::VideoPostproc
 
     template <typename M, int n>
     M matrixFromString(const std::string& str);
-    bool estimateDistanceHeight(cnstream::CNInferBoundingBox& bbox, float& distance, float& height);
+    bool estimateDistanceHeight(cnstream::CNInferBoundingBox& bbox, float& distance, float& height, float& width);
     DECLARE_REFLEX_OBJECT_EX(VideoPostprocYolov5Mono, cnstream::VideoPostproc);
 };  // class VideoPostprocYolov5Mono
 
@@ -146,11 +146,12 @@ bool VideoPostprocYolov5Mono::Init(const std::unordered_map<std::string, std::st
  * @return true succeed
  * @return false TODO(liuyk): add circumstances for failure estimating depth or height
  */
-bool VideoPostprocYolov5Mono::estimateDistanceHeight(cnstream::CNInferBoundingBox& bbox, float& distance, float& height)
+bool VideoPostprocYolov5Mono::estimateDistanceHeight(cnstream::CNInferBoundingBox& bbox, float& distance, float& height,
+                                                     float& width)
 {
     float angleB, angleC;
     float depth;  // Depth estimated of object on camera coordinate system
-    float x, y, h;
+    float x, y, w, h;
     Eigen::Vector3f coordinatePhotoHomogeneous;  // Key point(bottom center object bounding box) coordinate on photo
     Eigen::Vector3f coordinateCamera;            // Key point on camera coordinate system
     Eigen::Vector4f coordinateCameraHomogeneous;
@@ -160,6 +161,7 @@ bool VideoPostprocYolov5Mono::estimateDistanceHeight(cnstream::CNInferBoundingBo
     // Center coordinate of bounding box on photo
     x = sourceImageWidth * (bbox.x + bbox.w / 2);
     y = sourceImageHeight * (bbox.y + bbox.h);
+    w = sourceImageWidth * bbox.w;
     h = sourceImageHeight * bbox.h;
     // Estimate depth
     angleB = std::atan((y - sourceImageHeight / 2) / cameraFocalLengthY);
@@ -174,7 +176,9 @@ bool VideoPostprocYolov5Mono::estimateDistanceHeight(cnstream::CNInferBoundingBo
     // calculate distance from projection of IPC on floor
     distance = std::sqrt(std::pow(coordinateWorldHomogeneous(0, 0), 2) + std::pow(coordinateWorldHomogeneous(1, 0), 2));
     // calculate height from floor(extrinsic param)
+    // TODO(yangtuo250): precisely solid geometry needed, but costly
     height = h * distance / cameraFocalLengthY;
+    width = w * distance / cameraFocalLengthX;
     // std::cout << "x, y:" << x << " " << y << " angleB, angleC:" << angleB << " " << angleC << " depth:" << depth
     //           << " distance, height:" << distance << " " << height << std::endl;
 
@@ -255,10 +259,11 @@ bool VideoPostprocYolov5Mono::Execute(infer_server::InferData* output_data, cons
 
         if (obj->bbox.h <= 0 || obj->bbox.w <= 0 || (obj->score < threshold_ && threshold_ > 0)) continue;
         // calculate object distance and height
-        float distance, height;
-        LOGF_IF(DEMO, !estimateDistanceHeight(obj->bbox, distance, height)) << "Cannot get object distance and height";
+        float distance, height, width;
+        LOGF_IF(DEMO, !estimateDistanceHeight(obj->bbox, distance, height, width)) << "Cannot get object distance and height";
         obj->collection.Add<float>("distance", distance);
         obj->collection.Add<float>("height", height);
+        obj->collection.Add<float>("width", width);
 
         std::lock_guard<std::mutex> objs_mutex(objs_holder->mutex_);
         objs.push_back(obj);
