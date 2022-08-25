@@ -17,6 +17,7 @@
 #include "string_operations/split.h"
 
 #define CLIP(x) x < 0 ? 0 : (x > 1 ? 1 : x)
+#define abzoluteZero -273.15
 
 using sensorDataMatrix = std::vector<std::vector<float>>;
 using sensorData = std::pair<int64_t, sensorDataMatrix>;
@@ -76,6 +77,79 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
             LOGE(THERMAL_ALIGN) << "Parse frame_delay_milliseconds failed: " << msg;
             return false;
         }
+        // Thermal roi different from rgb main camera in most case
+        // left and right
+        try {
+            roiThermalLeft =
+                static_cast<int>(static_cast<float>(thermalSensorWidth) * std::stof(param_set["roi_thermal_left"]));
+        } catch (const char* msg) {
+            LOGW(THERMAL_ALIGN) << msg;
+        } catch (std::invalid_argument& e) {
+            LOGW(THERMAL_ALIGN) << "roi_thermal_left not set or not float";
+        }
+        if (roiThermalLeft <= -thermalSensorWidth) {
+            LOGE(THERMAL_ALIGN) << "roi_thermal_left must larger than -1.0";
+            return false;
+        }
+        try {
+            if (param_set.find("roi_thermal_right") == param_set.end() && 0 != roiThermalLeft) {
+                roiThermalRight = roiThermalLeft;
+                throw "roi_thermal_right not found, set to same with roi_thermal_left by default";
+            } else {
+                roiThermalRight =
+                    static_cast<int>(static_cast<float>(thermalSensorWidth) * std::stof(param_set["roi_thermal_right"]));
+            }
+        } catch (const char* msg) {
+            LOGW(THERMAL_ALIGN) << msg;
+        } catch (std::invalid_argument& e) {
+            LOGW(THERMAL_ALIGN) << "roi_thermal_right not set or not float";
+        }
+        if (roiThermalRight <= -thermalSensorWidth) {
+            LOGE(THERMAL_ALIGN) << "roi_thermal_right must larger than -1.0";
+            return false;
+        }
+        thermalSensorWidthNew = roiThermalLeft + roiThermalRight + thermalSensorWidth;
+        if (thermalSensorWidthNew <= 0) {
+            LOGE(THERMAL_ALIGN) << "Invalid roi_thermal_left and roi_thermal_right, sum must larger than -1.0";
+            return false;
+        }
+        // top and bottom
+        try {
+            roiThermalTop =
+                static_cast<int>(static_cast<float>(thermalSensorHeight) * std::stof(param_set["roi_thermal_top"]));
+        } catch (const char* msg) {
+            LOGW(THERMAL_ALIGN) << msg;
+        } catch (std::invalid_argument& e) {
+            LOGW(THERMAL_ALIGN) << "roi_thermal_top not set or not float";
+        }
+        if (roiThermalTop <= -thermalSensorHeight) {
+            LOGE(THERMAL_ALIGN) << "roi_thermal_top must larger than -1.0";
+            return false;
+        }
+        try {
+            if (param_set.find("roi_thermal_bottom") == param_set.end() && 0 != roiThermalTop) {
+                roiThermalBottom = roiThermalTop;
+                throw "roi_thermal_bottom not found, set to same with roi_thermal_top by default";
+            } else {
+                roiThermalBottom =
+                    static_cast<int>(static_cast<float>(thermalSensorHeight) * std::stof(param_set["roi_thermal_bottom"]));
+            }
+        } catch (const char* msg) {
+            LOGW(THERMAL_ALIGN) << msg;
+        } catch (std::invalid_argument& e) {
+            LOGE(THERMAL_ALIGN) << "roi_thermal_bottom not set or not float";
+        }
+        if (roiThermalBottom <= -thermalSensorHeight) {
+            LOGE(THERMAL_ALIGN) << "roi_thermal_bottom must larger than -1.0";
+            return false;
+        }
+        thermalSensorHeightNew = roiThermalTop + roiThermalBottom + thermalSensorHeight;
+        if (thermalSensorHeightNew <= 0) {
+            LOGE(THERMAL_ALIGN) << "Invalid roi_thermal_top and roi_thermal_bottom, sum must larger than -1.0";
+            return false;
+        }
+        std::cout << "New thermal matrix height: " << thermalSensorHeightNew << ", new width: " << thermalSensorWidthNew
+                  << std::endl;
         // starting thermal data acquiring thread
         running_.store(true);
         curlThread = std::thread(&ThermalAlign::fetchThermalData, this);
@@ -101,7 +175,7 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
 
         int64_t frameTimeMillisecond = package->timestamp / 90 - frameDelayMilliseconds;  // 1/90000pts(1/tbn)*1000ms/s
         // std::cout << "[Process DEBUG] Frame time: " << frameTimeMillisecond << "ms" << std::endl;
-        sensorDataMatrix frameTempMatrix(thermalSensorHeight, std::vector<float>(thermalSensorWidth, 0.));
+        sensorDataMatrix frameTempMatrix(thermalSensorHeightNew, std::vector<float>(thermalSensorWidthNew, 0.));
         if (!getTempMatrixByTime(frameTimeMillisecond, frameTempMatrix)) {
             std::cerr << "[WARNING] Get frame temperature failed! Current Frame " << frameTimeMillisecond
                       << "ms, oldest Temperature time: " << thermalDatas.front().first << "ms" << std::endl;
@@ -121,7 +195,9 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
             std::pair<float, float> centerPoint = std::make_pair(centerX, centerY);
 
             float bboxTemp = getTempByPoint(frameTempMatrix, centerPoint);
-            object->collection.Add<float>("temperature", bboxTemp);
+            if (std::abs(bboxTemp - abzoluteZero) > 0.1) {
+                object->collection.Add<float>("temperature", bboxTemp);
+            }
         }
 
         return 0;
@@ -135,8 +211,11 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
     std::atomic<bool> running_;
     std::chrono::system_clock::time_point timeStart;
     int maxQueueSize;
-    int thermalSensorHeight, thermalSensorWidth;
+    int thermalSensorHeight, thermalSensorWidth, thermalSensorHeightNew, thermalSensorWidthNew;
     int frameDelayMilliseconds;
+    int roiThermalLeft = 0, roiThermalRight = 0, roiThermalTop = 0,
+        roiThermalBottom = 0; /* Thermal matrix ROI according to rgb frame, percentage by rgb,
+                                negative for less than rgb region, positive for more */
 
     static size_t onWriteData(void* buffer, size_t size, size_t nmemb, void* lpVoid)
     {
@@ -195,7 +274,7 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
                 // std::cout << "[fetchThermalData DEBUG] Thermal string length: " << tempStr.length() << " match 4x"
                 //           << thermalSensorHeight << "x" << thermalSensorWidth << std::endl;
 
-                sensorDataMatrix dataMatrix(thermalSensorHeight, std::vector<float>(thermalSensorWidth, 0.));
+                sensorDataMatrix dataMatrix(thermalSensorHeightNew, std::vector<float>(thermalSensorWidthNew, abzoluteZero));
                 str2FloatMatrix(tempStr, dataMatrix);
                 // std::cout << "[fetchThermalData DEBUG] dataMatrix: height " << dataMatrix.size() << " width "
                 //           << dataMatrix[thermalSensorHeight - 1].size() << " first element " << dataMatrix[0][0]
@@ -254,9 +333,14 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
     void str2FloatMatrix(std::string& strData, sensorDataMatrix& floatData)
     {
         const float* floatArray = reinterpret_cast<const float*>(strData.c_str());
-        for (int i = 0; i < thermalSensorHeight; i++) {
-            for (int j = 0; j < thermalSensorWidth; j++) {
-                floatData[i][j] = floatArray[i * thermalSensorHeight + j];
+        // reshape original thermal data matrix to new ROI
+        int heightStart = roiThermalTop > 0 ? roiThermalTop : 0;
+        int heightEnd = roiThermalBottom > 0 ? (thermalSensorHeight + roiThermalTop) : thermalSensorHeightNew;
+        int widthStart = roiThermalLeft > 0 ? roiThermalLeft : 0;
+        int widthEnd = roiThermalRight > 0 ? (thermalSensorWidth + roiThermalLeft) : thermalSensorWidthNew;
+        for (int i = heightStart; i < heightEnd; i++) {
+            for (int j = widthStart; j < widthEnd; j++) {
+                floatData[i][j] = floatArray[(i - roiThermalTop) * thermalSensorHeight + j - roiThermalLeft];
             }
         }
     }
@@ -323,8 +407,8 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
 
     float getTempByPoint(sensorDataMatrix& dataMatrix, std::pair<float, float>& point)
     {
-        int x = std::round(point.first * thermalSensorWidth);
-        int y = std::round(point.second * thermalSensorHeight);
+        int x = std::round(point.first * thermalSensorWidthNew);
+        int y = std::round(point.second * thermalSensorHeightNew);
         x = (x > 0) ? x : 1;
         y = (y > 0) ? y : 1;
 

@@ -177,7 +177,7 @@ bool VideoPostprocYolov5Mono::estimateDistanceHeight(cnstream::CNInferBoundingBo
     distance = std::sqrt(std::pow(coordinateWorldHomogeneous(0, 0), 2) + std::pow(coordinateWorldHomogeneous(1, 0), 2));
     // calculate height from floor(extrinsic param)
     // TODO(yangtuo250): precisely solid geometry needed, but costly
-    height = h * distance / cameraFocalLengthY;
+    height = h * distance / cameraFocalLengthY / std::cos(cameraAngle);
     width = w * distance / cameraFocalLengthX;
     // std::cout << "x, y:" << x << " " << y << " angleB, angleC:" << angleB << " " << angleC << " depth:" << depth
     //           << " distance, height:" << distance << " " << height << std::endl;

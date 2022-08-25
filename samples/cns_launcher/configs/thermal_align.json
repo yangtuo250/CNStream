@@ -9,7 +9,8 @@
       "max_queue_size": 120,
       "thermal_sensor_width": 256,
       "thermal_sensor_height": 192,
-      "frame_delay_milliseconds": 2000
+      "frame_delay_milliseconds": 2000,
+      "roi_thermal_left": 0.111111
     }
   }
 }
