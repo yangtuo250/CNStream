@@ -75,23 +75,24 @@ bool VideoPostprocYolov5Mono::Init(const std::unordered_map<std::string, std::st
     if (params.end() == params.find("camera_internal_param") || params.end() == params.find("camera_extrinsic_param") ||
         params.end() == params.find("camera_height") || params.end() == params.find("camera_angle") ||
         params.end() == params.find("source_image_height") || params.end() == params.find("source_image_width")) {
-        LOGE(DEMO) << "Either camera_internal_param, camera_extrinsic_param, camera_height, camera_angle source_image_height "
-                      "and source_image_width are needed to be in custom_postproc_params";
+        LOGE(DEMO)
+            << "\e[31mEither camera_internal_param, camera_extrinsic_param, camera_height, camera_angle source_image_height "
+               "and source_image_width are needed to be in custom_postproc_params\e[0m";
         return false;
     }
     // camera parameter
     try {
         cameraInternalParam = matrixFromString<Eigen::Matrix3f, 3>(params.at("camera_internal_param"));
-    } catch (const char* msg) {
-        LOGE(DEMO) << "Error parsing camera_internal_param with message: " << msg;
+    } catch (...) {
+        LOGE(DEMO) << "\e[31mError parsing camera_internal_param\e[0m";
         return false;
     }
     cameraFocalLengthX = cameraInternalParam(0, 0);
     cameraFocalLengthY = cameraInternalParam(1, 1);
     try {
         cameraExtrinsicParam = matrixFromString<Eigen::Matrix4f, 4>(params.at("camera_extrinsic_param"));
-    } catch (const char* msg) {
-        LOGE(DEMO) << "Error parsing camera_extrinsic_param with message: " << msg;
+    } catch (...) {
+        LOGE(DEMO) << "\e[31mError parsing camera_extrinsic_param\e[0m";
         return false;
     }
     // inverse of camera parameter
@@ -100,39 +101,41 @@ bool VideoPostprocYolov5Mono::Init(const std::unordered_map<std::string, std::st
     // camera pose parameter
     try {
         cameraHeight = std::stof(params.at("camera_height"));
-    } catch (const char* msg) {
-        LOGE(DEMO) << "Error converting camera_height to float with message: " << msg;
+    } catch (std::invalid_argument& e) {
+        LOGE(DEMO) << "\e[31mError converting camera_height from " << params.at("camera_height") << " to float\e[0m";
         return false;
     }
     try {
         cameraAngle = std::stof(params.at("camera_angle"));
-    } catch (const char* msg) {
-        LOGE(DEMO) << "Error converting camera_angle to float with message: " << msg;
+    } catch (std::invalid_argument& e) {
+        LOGE(DEMO) << "\e[31mError converting camera_angle from " << params.at("camera_angle") << " to float\e[0m";
         return false;
     }
     // source image size
     try {
         sourceImageHeight = std::stof(params.at("source_image_height"));
-    } catch (const char* msg) {
-        LOGE(DEMO) << "Error converting source_image_height to float with message: " << msg;
+    } catch (std::invalid_argument& e) {
+        LOGE(DEMO) << "\e[31mError converting source_image_height from " << params.at("camera_height") << " to float\e[0m";
         return false;
     }
     try {
         sourceImageWidth = std::stof(params.at("source_image_width"));
-    } catch (const char* msg) {
-        LOGE(DEMO) << "Error converting source_image_width to float with message: " << msg;
+    } catch (std::invalid_argument& e) {
+        LOGE(DEMO) << "\e[31mError converting source_image_width from " << params.at("source_image_width") << " to float\e[0m";
         return false;
     }
-    std::cout << "cameraInternalParam: " << cameraInternalParam << std::endl
-              << "cameraInternalParamInv: " << cameraInternalParamInv << std::endl
-              << "cameraExtrinsicParam: " << cameraExtrinsicParam << std::endl
-              << "cameraExtrinsicParamInv: " << cameraExtrinsicParamInv << std::endl
-              << "cameraFocalLengthX: " << cameraFocalLengthX << std::endl
-              << "cameraFocalLengthY: " << cameraFocalLengthY << std::endl
+    std::cout << "\e[36mcameraInternalParam:" << std::endl
+              << cameraInternalParam << std::endl
+              << "cameraInternalParamInv:" << std::endl
+              << cameraInternalParamInv << std::endl
+              << "cameraExtrinsicParam:" << std::endl
+              << cameraExtrinsicParam << std::endl
+              << "cameraExtrinsicParamInv:" << std::endl
+              << cameraExtrinsicParamInv << std::endl
               << "sourceImageHeight: " << sourceImageHeight << std::endl
               << "sourceImageWidth: " << sourceImageWidth << std::endl
               << "cameraHeight: " << cameraHeight << std::endl
-              << "cameraAngle: " << cameraAngle << std::endl;
+              << "cameraAngle: " << cameraAngle << "\e[0m" << std::endl;
 
     return true;
 }
@@ -260,7 +263,8 @@ bool VideoPostprocYolov5Mono::Execute(infer_server::InferData* output_data, cons
         if (obj->bbox.h <= 0 || obj->bbox.w <= 0 || (obj->score < threshold_ && threshold_ > 0)) continue;
         // calculate object distance and height
         float distance, height, width;
-        LOGF_IF(DEMO, !estimateDistanceHeight(obj->bbox, distance, height, width)) << "Cannot get object distance and height";
+        LOGF_IF(DEMO, !estimateDistanceHeight(obj->bbox, distance, height, width))
+            << "\e[33mCannot get object distance and height\e[0m";
         obj->collection.Add<float>("distance", distance);
         obj->collection.Add<float>("height", height);
         obj->collection.Add<float>("width", width);

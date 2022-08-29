@@ -37,44 +37,47 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
             param_set.find("thermal_sensor_width") == param_set.end() ||
             param_set.find("frame_delay_milliseconds") == param_set.end() ||
             param_set.find("max_queue_size") == param_set.end()) {
-            LOGE(THERMAL_ALIGN) << "get_thermal_data_url user_and_passwd, max_queue_size, thermal_sensor_height, "
-                                   "thermal_sensor_width, frame_delay_milliseconds are required for thermal align module";
+            LOGE(THERMAL_ALIGN) << "\e[31mget_thermal_data_url user_and_passwd, max_queue_size, thermal_sensor_height, "
+                                   "thermal_sensor_width, frame_delay_milliseconds are required for thermal align module\e[0m";
             return false;
         }
         try {
             strUrl = param_set["get_thermal_data_url"];
         } catch (const char* msg) {
-            LOGE(THERMAL_ALIGN) << "Parse get_thermal_data_url failed: " << msg;
+            LOGE(THERMAL_ALIGN) << "\e[31mParse get_thermal_data_url failed: " << msg << "\e[0m";
             return false;
         }
         try {
             strUserPwd = param_set["user_and_passwd"];
         } catch (const char* msg) {
-            LOGE(THERMAL_ALIGN) << "Parse user_and_passwd failed: " << msg;
+            LOGE(THERMAL_ALIGN) << "\e[31mParse user_and_passwd failed: " << msg << "\e[0m";
             return false;
         }
         try {
             maxQueueSize = std::stoi(param_set["max_queue_size"]);
-        } catch (const char* msg) {
-            LOGE(THERMAL_ALIGN) << "Parse max_queue_size failed: " << msg;
+        } catch (std::invalid_argument& e) {
+            LOGE(THERMAL_ALIGN) << "\e[31mError parsing max_queue_size from " << param_set["max_queue_size"] << " to int\e[0m";
             return false;
         }
         try {
             thermalSensorHeight = std::stoi(param_set["thermal_sensor_height"]);
-        } catch (const char* msg) {
-            LOGE(THERMAL_ALIGN) << "Parse thermal_sensor_height failed: " << msg;
+        } catch (std::invalid_argument& e) {
+            LOGE(THERMAL_ALIGN) << "\e[31mError parsing thermal_sensor_height from " << param_set["thermal_sensor_height"]
+                                << " to int\e[0m";
             return false;
         }
         try {
             thermalSensorWidth = std::stoi(param_set["thermal_sensor_width"]);
-        } catch (const char* msg) {
-            LOGE(THERMAL_ALIGN) << "Parse thermal_sensor_width failed: " << msg;
+        } catch (std::invalid_argument& e) {
+            LOGE(THERMAL_ALIGN) << "\e[31mError parsing thermal_sensor_width from " << param_set["thermal_sensor_width"]
+                                << " to int\e[0m";
             return false;
         }
         try {
             frameDelayMilliseconds = std::stoi(param_set["frame_delay_milliseconds"]);
-        } catch (const char* msg) {
-            LOGE(THERMAL_ALIGN) << "Parse frame_delay_milliseconds failed: " << msg;
+        } catch (std::invalid_argument& e) {
+            LOGE(THERMAL_ALIGN) << "\e[31mError parsing frame_delay_milliseconds from "
+                                << param_set["frame_delay_milliseconds"] << " to int\e[0m";
             return false;
         }
         // Thermal roi different from rgb main camera in most case
@@ -83,34 +86,34 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
             roiThermalLeft =
                 static_cast<int>(static_cast<float>(thermalSensorWidth) * std::stof(param_set["roi_thermal_left"]));
         } catch (const char* msg) {
-            LOGW(THERMAL_ALIGN) << msg;
+            LOGW(THERMAL_ALIGN) << msg << "\e[0m";
         } catch (std::invalid_argument& e) {
-            LOGW(THERMAL_ALIGN) << "roi_thermal_left not set or not float";
+            LOGW(THERMAL_ALIGN) << "\e[33mroi_thermal_left not set or not float\e[0m";
         }
         if (roiThermalLeft <= -thermalSensorWidth) {
-            LOGE(THERMAL_ALIGN) << "roi_thermal_left must larger than -1.0";
+            LOGE(THERMAL_ALIGN) << "\e[31mroi_thermal_left must larger than -1.0\e[0m";
             return false;
         }
         try {
             if (param_set.find("roi_thermal_right") == param_set.end() && 0 != roiThermalLeft) {
                 roiThermalRight = roiThermalLeft;
-                throw "roi_thermal_right not found, set to same with roi_thermal_left by default";
+                throw "roi_thermal_right not found, set to same with roi_thermal_left by default\e[0m";
             } else {
                 roiThermalRight =
                     static_cast<int>(static_cast<float>(thermalSensorWidth) * std::stof(param_set["roi_thermal_right"]));
             }
         } catch (const char* msg) {
-            LOGW(THERMAL_ALIGN) << msg;
+            LOGW(THERMAL_ALIGN) << "\e[33m" << msg << "\e[0m";
         } catch (std::invalid_argument& e) {
-            LOGW(THERMAL_ALIGN) << "roi_thermal_right not set or not float";
+            LOGW(THERMAL_ALIGN) << "\e[33mroi_thermal_right not set or not float\e[0m";
         }
         if (roiThermalRight <= -thermalSensorWidth) {
-            LOGE(THERMAL_ALIGN) << "roi_thermal_right must larger than -1.0";
+            LOGE(THERMAL_ALIGN) << "\e[31mroi_thermal_right must larger than -1.0\e[0m";
             return false;
         }
         thermalSensorWidthNew = roiThermalLeft + roiThermalRight + thermalSensorWidth;
         if (thermalSensorWidthNew <= 0) {
-            LOGE(THERMAL_ALIGN) << "Invalid roi_thermal_left and roi_thermal_right, sum must larger than -1.0";
+            LOGE(THERMAL_ALIGN) << "\e[31mInvalid roi_thermal_left and roi_thermal_right, sum must larger than -1.0\e[0m";
             return false;
         }
         // top and bottom
@@ -118,12 +121,12 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
             roiThermalTop =
                 static_cast<int>(static_cast<float>(thermalSensorHeight) * std::stof(param_set["roi_thermal_top"]));
         } catch (const char* msg) {
-            LOGW(THERMAL_ALIGN) << msg;
+            LOGW(THERMAL_ALIGN) << msg << "\e[0m";
         } catch (std::invalid_argument& e) {
-            LOGW(THERMAL_ALIGN) << "roi_thermal_top not set or not float";
+            LOGW(THERMAL_ALIGN) << "\e[33mroi_thermal_top not set or not float\e[0m";
         }
         if (roiThermalTop <= -thermalSensorHeight) {
-            LOGE(THERMAL_ALIGN) << "roi_thermal_top must larger than -1.0";
+            LOGE(THERMAL_ALIGN) << "\e[31mroi_thermal_top must larger than -1.0\e[0m";
             return false;
         }
         try {
@@ -135,21 +138,21 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
                     static_cast<int>(static_cast<float>(thermalSensorHeight) * std::stof(param_set["roi_thermal_bottom"]));
             }
         } catch (const char* msg) {
-            LOGW(THERMAL_ALIGN) << msg;
+            LOGW(THERMAL_ALIGN) << "\e[33m" << msg << "\e[0m";
         } catch (std::invalid_argument& e) {
-            LOGE(THERMAL_ALIGN) << "roi_thermal_bottom not set or not float";
+            LOGW(THERMAL_ALIGN) << "\e[33mroi_thermal_bottom not set or not float\e[0m";
         }
         if (roiThermalBottom <= -thermalSensorHeight) {
-            LOGE(THERMAL_ALIGN) << "roi_thermal_bottom must larger than -1.0";
+            LOGE(THERMAL_ALIGN) << "\e[31mroi_thermal_bottom must larger than -1.0\e[0m";
             return false;
         }
         thermalSensorHeightNew = roiThermalTop + roiThermalBottom + thermalSensorHeight;
         if (thermalSensorHeightNew <= 0) {
-            LOGE(THERMAL_ALIGN) << "Invalid roi_thermal_top and roi_thermal_bottom, sum must larger than -1.0";
+            LOGE(THERMAL_ALIGN) << "\e[31mInvalid roi_thermal_top and roi_thermal_bottom, sum must larger than -1.0\e[0m";
             return false;
         }
-        std::cout << "New thermal matrix height: " << thermalSensorHeightNew << ", new width: " << thermalSensorWidthNew
-                  << std::endl;
+        std::cout << "\e[36mNew thermal matrix height: " << thermalSensorHeightNew << ", new width: " << thermalSensorWidthNew
+                  << "\e[0m" << std::endl;
         // starting thermal data acquiring thread
         running_.store(true);
         curlThread = std::thread(&ThermalAlign::fetchThermalData, this);
