@@ -51,13 +51,14 @@ int PreprocLprnet::Execute(const std::vector<float*>& net_inputs, const std::sha
   cv::Mat obj_bgr = frame_bgr(obj_roi);
 
   // resize
-  int input_w = model->InputShape(0).W();
-  int input_h = model->InputShape(0).H();
+  int input_w = model->InputShape(0).W();  // 94
+  int input_h = model->InputShape(0).H();  // 24
   cv::Mat obj_bgr_resized;
-  cv::resize(obj_bgr, obj_bgr_resized, cv::Size(input_h, input_w));
+  // cv::resize(obj_bgr, obj_bgr_resized, cv::Size(input_h, input_w));
 
-  // transpose
-  cv::transpose(obj_bgr_resized, obj_bgr_resized);
+  // // transpose
+  // cv::transpose(obj_bgr_resized, obj_bgr_resized);
+  cv::resize(obj_bgr, obj_bgr_resized, cv::Size(input_w, input_h));
 
   // bgr2bgra
   cv::Mat obj_bgra;
@@ -68,6 +69,11 @@ int PreprocLprnet::Execute(const std::vector<float*>& net_inputs, const std::sha
   // convert to float32, required by inferencer module
   cv::Mat obj_bgra_float32(input_h, input_w, CV_32FC4, net_inputs[0]);
   obj_bgra.convertTo(obj_bgra_float32, CV_32FC4);
+  // obj_bgra_float32 = obj_bgra_float32 - cv::Scalar(127.5, 127.5, 127.5);
+  // cv::divide(obj_bgra_float32, cv::Scalar(128., 128., 128.), obj_bgra_float32)
+  // // uint8
+  // cv::Mat obj_bgra_uint8(input_h, input_w, CV_8UC4, net_inputs[0]);
+  // obj_bgra.convertTo(obj_bgra_uint8, CV_8UC4);
 
   return 0;
 }

@@ -46,7 +46,7 @@ option(build_track           "build module track" ON)
 option(build_kafka           "build module kafka" ON)
 option(WITH_FFMPEG           "with ffmpeg" ON)
 option(WITH_FFMPEG_AVDEVICE  "with ffmpeg avdevice" OFF)
-option(WITH_FREETYPE         "with freetype" OFF)
+option(WITH_FREETYPE         "with freetype" ON)
 
 if(build_tests)
   add_definitions(-DUNIT_TEST)

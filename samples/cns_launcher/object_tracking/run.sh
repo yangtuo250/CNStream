@@ -95,9 +95,11 @@ Download ${LABEL_PATH} ${REMOTE_LABEL_PATH}
 
 ${SAMPLES_DIR}/generate_file_list.sh
 mkdir -p output
+export LD_LIBRARY_PATH=/home/liuyk/work/release/lib:/aixx/lib:/cambricon/test/lib:/cambricon/lib:/cambricon/lib64:/neuware/lib:/neuware/lib64
+ldconfig
 ${SAMPLES_DIR}/bin/cns_launcher  \
     --data_path ${SAMPLES_DIR}/files.list_video \
-    --src_frame_rate 40   \
+    --src_frame_rate 20   \
     --config_fname ${CURRENT_DIR}/config.json \
     --logtostderr=true
 
