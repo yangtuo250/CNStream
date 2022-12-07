@@ -19,6 +19,7 @@
  *************************************************************************/
 
 #include <algorithm>
+#include <cmath>
 #include <memory>
 #include <string>
 #include <vector>
@@ -28,6 +29,18 @@
 #include "postproc.hpp"
 
 static inline size_t ArgMax(float* begin, int len) { return std::distance(begin, std::max_element(begin, begin + len)); }
+
+static float softmaxResult(float* begin, const int len, int max)
+{
+    float m = 1.0;  // e^(begin[max] - begin[max]) == e^0, prevent overflow or underflow
+
+    float sum = 0.0;
+    for (int i = 0; i < len; i++) {
+        sum += std::exp(begin[i] - begin[max]);
+    }
+
+    return m / sum;
+}
 
 class PostprocLprnetOri : public cnstream::ObjPostproc
 {
@@ -57,25 +70,26 @@ int PostprocLprnetOri::Execute(const std::vector<float*>& net_outputs, const std
     // clang-format on
     static constexpr int kNChar = 67;  // NHWC 4 18 1 68, so max index == 68 - 1
     static constexpr int kPlateLen = 8;
-    const int seq_len = model->OutputShape(0).C();  // 68
+    const int seq_len = model->OutputShape(0).H();  // 18
     float* data = net_outputs[0];
-    LOGF_IF(POSTPROC_LPRNET_ORI, seq_len <= kNChar) << "Can not deal with this lprnet model!";
-    const int nlabel = model->OutputShape(0).H();  // 18
-    LOGI(POSTPROC_LPRNET_ORI) << "Model C(seq_len) & H(nlabel): " << seq_len << " & " << nlabel;
+    const int nlabel = model->OutputShape(0).C();  // 68
+    LOGF_IF(POSTPROC_LPRNET_ORI, nlabel <= kNChar) << "Can not deal with this lprnet model!";
+    LOGI(POSTPROC_LPRNET_ORI) << "Model H(seq_len) & C(nlabel): " << seq_len << " & " << nlabel;
     std::string plate_number = "";
-    int plate_number_idx_all[nlabel], plate_number_idx[kPlateLen];
+    int plate_number_idx_all[seq_len], plate_number_idx[kPlateLen];
     int pre_ch_idx;
     float curr_score, score = 0.0f;
     int len = 0;
-    for (int label_idx = 0; label_idx < nlabel; ++label_idx) {
-        plate_number_idx_all[label_idx] = ArgMax(data + label_idx * seq_len, seq_len);
+    for (int label_idx = 0; label_idx < seq_len; ++label_idx) {
+        plate_number_idx_all[label_idx] = ArgMax(data + label_idx * nlabel, nlabel);
     }
     pre_ch_idx = plate_number_idx_all[0];
     if (pre_ch_idx != kNChar) {
+        plate_number += kChars[pre_ch_idx];
         plate_number_idx[len] = pre_ch_idx;
         len++;
     }
-    for (int label_idx = 0; label_idx < nlabel && len < kPlateLen; ++label_idx) {
+    for (int label_idx = 0; label_idx < seq_len && len < kPlateLen; ++label_idx) {
         int ch_idx = plate_number_idx_all[label_idx];
         if (pre_ch_idx == ch_idx || ch_idx == kNChar) {
             if (ch_idx == kNChar) {
@@ -83,7 +97,7 @@ int PostprocLprnetOri::Execute(const std::vector<float*>& net_outputs, const std
             }
             continue;
         }
-        curr_score = data[label_idx * seq_len + ch_idx];
+        curr_score = softmaxResult(data + label_idx * nlabel, nlabel, ch_idx);
         // if (kNChar - 2 == ch_idx) ch_idx = 32;  // I -> 1
         // if (kNChar - 1 == ch_idx) ch_idx = 31;  // O -> 0
         // if (curr_score < threshold_) {
@@ -100,8 +114,10 @@ int PostprocLprnetOri::Execute(const std::vector<float*>& net_outputs, const std
     score /= len;
     std::cout << "############################plate/len/score/threshold: " << plate_number << "/" << len << "/" << score << "/"
               << threshold_ << std::endl;
+    // 7 or 8
     if (len != kPlateLen && len != kPlateLen - 1) return 0;
     if (score < threshold_) return 0;
+    // 1st. place must be province and 2nd. must not
     if (plate_number_idx[0] > 30 || plate_number_idx[1] <= 40) return 0;
     if (obj->collection.HasValue("plate_container")) {
         // plate_container set in PostprocMSSDPlateDetection
