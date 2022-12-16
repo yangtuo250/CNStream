@@ -1,12 +1,13 @@
 {
-  "osd" : {
-    "class_name" : "cnstream::Osd",
-    "parallelism" : 1,
-    "max_input_queue_size" : 20,
-    "custom_params" : {
-      "label_path" : "../../../../data/models/label_map_coco.txt",
-      "logo": "Powered by XiUOS Knowing Framework"
+  "osd": {
+    "class_name": "cnstream::Osd",
+    "parallelism": 1,
+    "max_input_queue_size": 20,
+    "custom_params": {
+      "label_path": "../../../../data/models/label_map_coco.txt",
+      "logo": "Powered by XiUOS Knowing Framework",
+      "font_path": "/usr/include/wqy-zenhei.ttc",
+      "label_size": "small"
     }
   }
 }
-

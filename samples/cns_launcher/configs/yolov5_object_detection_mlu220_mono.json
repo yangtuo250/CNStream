@@ -1,31 +1,32 @@
 {
   "detector": {
     "class_name": "cnstream::Inferencer2",
-    "parallelism": 1,
-    "max_input_queue_size": 20,
+    "parallelism": 2,
+    "max_input_queue_size": 4,
     "custom_params": {
       "model_path": "../../../data/models/yolov5_b4c4_rgb_mlu220.cambricon",
       "func_name": "subnet0",
       // Uncomment the following 2 lines to use cncv
-      "preproc_name" : "CNCV",
-      "normalize" : true,
-      // "preproc_name": "VideoPreprocYolov5",
+      "preproc_name": "CNCV",
+      "normalize": true,
+      //"preproc_name": "VideoPreprocYolov5",
       "postproc_name": "VideoPostprocYolov5Mono",
       "keep_aspect_ratio": "true",
       "model_input_pixel_format": "RGB24",
-      "batching_timeout": 250,
+      // "batch_strategy": "STATIC",
+      "batching_timeout": 1000,
       "threshold": 0.45,
-      "engine_num": 1,
+      "engine_num": 2,
       "device_id": 0,
       "show_stats": "true",
-      "infer_interval": 1,
+      "infer_interval": 2,
       "custom_postproc_params": {
         "camera_internal_param": "3121.7303,0.0,1938.391,0.0,3242.884,1072.597,0.0,0.0,1.0",
         "camera_extrinsic_param": "-0.707106781,-0.707106781,0.0,0.0,0.0,0.0,1.0,2.25,-0.707106781,0.707106781,0.0,0.0,0.0,0.0,0.0,1.0",
         "camera_height": 2.25,
         "camera_angle": 0.2617993877991494,
-        "source_image_height": 1080.0,
-        "source_image_width": 1920.0
+        "source_image_height": 720.0,
+        "source_image_width": 1080.0
       }
     }
   }

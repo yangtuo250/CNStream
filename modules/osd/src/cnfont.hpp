@@ -71,12 +71,12 @@ class CnFont {
    *   color: the color of font
    * @return Size of the string
    */
-  int putText(cv::Mat& img, char* text, cv::Point pos, cv::Scalar color);  // NOLINT
-  bool GetTextSize(char* text, uint32_t* width, uint32_t* height);
+  int putText(cv::Mat& img, char* text, cv::Point pos, cv::Scalar color, int charSize=0);  // NOLINT
+  bool GetTextSize(char* text, uint32_t* width, uint32_t* height, int charSize=0);
   uint32_t GetFontPixel();
 
  private:
-  void GetWCharSize(wchar_t wc, uint32_t* width, uint32_t* height);
+  void GetWCharSize(wchar_t wc, uint32_t* width, uint32_t* height, int charSize);
   /**
    * @brief Converts character to wide character
    * @param
@@ -97,7 +97,7 @@ class CnFont {
    *   pos: the show of position
    *   color: the color of font
    */
-  void putWChar(cv::Mat& img, wchar_t wc, cv::Point& pos, cv::Scalar color);  // NOLINT
+  void putWChar(cv::Mat& img, wchar_t wc, cv::Point& pos, cv::Scalar color, int charSize);  // NOLINT
   CnFont& operator=(const CnFont&);
 
   FT_Library m_library;

@@ -1,12 +1,12 @@
 {
-  "encode" : {
-    "class_name" : "cnstream::Encode",
-    "parallelism" : 1,
-    "max_input_queue_size" : 16,
-    "custom_params" : {
-      "frame_rate" : 24,
-      "encoder_type" : "mlu",
-      "file_name" : "output/1.mp4",
+  "encode": {
+    "class_name": "cnstream::Encode",
+    "parallelism": 1,
+    "max_input_queue_size": 16,
+    "custom_params": {
+      "frame_rate": 25,
+      "encoder_type": "mlu",
+      "file_name": "output/1.mp4",
       "device_id": 0
     }
   }
