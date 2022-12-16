@@ -120,7 +120,7 @@ int CnFont::ToWchar(char*& src, wchar_t*& dest, const char* locale) {
   return 0;
 }
 
-bool CnFont::GetTextSize(char* text, uint32_t* width, uint32_t* height) {
+bool CnFont::GetTextSize(char* text, uint32_t* width, uint32_t* height, int charSize) {
   if (!width || !height || !text) {
     LOGE(OSD) << " [CnFont] [GetTextSize] The text, width or height is nullptr.";
     return false;
@@ -140,7 +140,7 @@ bool CnFont::GetTextSize(char* text, uint32_t* width, uint32_t* height) {
   double sep = m_fontSize.val[0] * m_fontSize.val[2];
 
   for (int i = 0; w_str[i] != '\0'; ++i) {
-    GetWCharSize(w_str[i], &w_char_width, &w_char_height);
+    GetWCharSize(w_str[i], &w_char_width, &w_char_height, charSize);
     if (*height < w_char_height) {
       *height = w_char_height;
     }
@@ -154,12 +154,13 @@ bool CnFont::GetTextSize(char* text, uint32_t* width, uint32_t* height) {
   return true;
 }
 
-void CnFont::GetWCharSize(wchar_t wc, uint32_t* width, uint32_t* height) {
+void CnFont::GetWCharSize(wchar_t wc, uint32_t* width, uint32_t* height, int charSize) {
   if (!width || !height) {
     LOGE(OSD) << " [CnFont] [GetWCharSize] The width or height is nullptr.";
     return;
   }
 
+  FT_Set_Char_Size(m_face, 0, charSize<<6, 72, 72);
   FT_UInt glyph_index = FT_Get_Char_Index(m_face, wc);
   FT_Load_Glyph(m_face, glyph_index, FT_LOAD_DEFAULT);
   FT_Render_Glyph(m_face->glyph, FT_RENDER_MODE_MONO);
@@ -171,7 +172,7 @@ void CnFont::GetWCharSize(wchar_t wc, uint32_t* width, uint32_t* height) {
   *width = slot->bitmap.width;
 }
 
-int CnFont::putText(cv::Mat& img, char* text, cv::Point pos, cv::Scalar color) {
+int CnFont::putText(cv::Mat& img, char* text, cv::Point pos, cv::Scalar color, int charSize) {
   if (img.data == nullptr) {
     LOGE(OSD) << "[CnFont] [putText] img.data is nullptr.";
     return -1;
@@ -193,15 +194,16 @@ int CnFont::putText(cv::Mat& img, char* text, cv::Point pos, cv::Scalar color) {
   }
 
   for (int i = 0; w_str[i] != '\0'; ++i) {
-    putWChar(img, w_str[i], pos, color);
+    putWChar(img, w_str[i], pos, color, charSize);
   }
 
   return 0;
 }
 
 // Output the current character and update the m pos position
-void CnFont::putWChar(cv::Mat& img, wchar_t wc, cv::Point& pos, cv::Scalar color) {
+void CnFont::putWChar(cv::Mat& img, wchar_t wc, cv::Point& pos, cv::Scalar color, int charSize) {
   // Generate a binary bitmap of a font based on unicode
+  FT_Set_Char_Size(m_face, 0, charSize<<6, 72, 72);
   FT_UInt glyph_index = FT_Get_Char_Index(m_face, wc);
   FT_Load_Glyph(m_face, glyph_index, FT_LOAD_DEFAULT);
   FT_Render_Glyph(m_face->glyph, FT_RENDER_MODE_MONO);

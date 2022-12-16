@@ -62,9 +62,9 @@ class CnOsd {
   int GetLabelId(const std::string &label_id_str) const;
   void DrawBox(cv::Mat image, const cv::Point &top_left, const cv::Point &bottom_right, const cv::Scalar &color) const;
   void DrawText(cv::Mat image, const cv::Point &bottom_left, const std::string &text, const cv::Scalar &color,
-                float scale = 1, int *text_height = nullptr) const;
-  int CalcThickness(int image_width, float thickness) const;
-  double CalcScale(int image_width, float scale) const;
+                  float scale = 1, int *text_height = nullptr, bool background = true, int freeTypeCharSize = 16) const;
+    int CalcThickness(int image_width, float thickness) const;
+    double CalcScale(int image_width, float scale) const;
 
   float text_scale_ = 1;
   float text_thickness_ = 1;

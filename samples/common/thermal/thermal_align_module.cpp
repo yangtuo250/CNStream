@@ -4,9 +4,9 @@
 #include <memory>
 #include <mutex>
 #include <queue>
-#include <random>
 #include <string>
 #include <thread>
+// #include <tr1/random>
 #include <utility>
 #include <vector>
 
@@ -17,7 +17,7 @@
 #include "string_operations/split.h"
 
 #define CLIP(x) x < 0 ? 0 : (x > 1 ? 1 : x)
-#define abzoluteZero -273.15
+#define ABZOLUTEZERO -273.15
 
 using sensorDataMatrix = std::vector<std::vector<float>>;
 using sensorData = std::pair<int64_t, sensorDataMatrix>;
@@ -153,6 +153,14 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
         }
         std::cout << "\e[36mNew thermal matrix height: " << thermalSensorHeightNew << ", new width: " << thermalSensorWidthNew
                   << "\e[0m" << std::endl;
+        // other unnecessary params
+        // frequncy of thermal POST request
+        try {
+            POSTIntervalMilliseconds = std::stoi(param_set["post_interval"]);
+        } catch (std::invalid_argument& e) {
+            LOGW(THERMAL_ALIGN) << "\e[33mpost_interval unset or not int, falling back to default value("
+                                << POSTIntervalMilliseconds << ")!\e[0m";
+        }
         // starting thermal data acquiring thread
         running_.store(true);
         curlThread = std::thread(&ThermalAlign::fetchThermalData, this);
@@ -198,7 +206,13 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
             std::pair<float, float> centerPoint = std::make_pair(centerX, centerY);
 
             float bboxTemp = getTempByPoint(frameTempMatrix, centerPoint);
-            if (std::abs(bboxTemp - abzoluteZero) > 0.1) {
+            // // if temperature higher than 24 or lower than 20, generate random
+            // if (24. < bboxTemp) {
+            //     bboxTemp = 24. + dis(gen);
+            // } else if (20. > bboxTemp) {
+            //     bboxTemp = 20. - dis(gen);
+            // }
+            if (std::abs(bboxTemp - ABZOLUTEZERO) > 0.1) {
                 object->collection.Add<float>("temperature", bboxTemp);
             }
         }
@@ -219,6 +233,11 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
     int roiThermalLeft = 0, roiThermalRight = 0, roiThermalTop = 0,
         roiThermalBottom = 0; /* Thermal matrix ROI according to rgb frame, percentage by rgb,
                                 negative for less than rgb region, positive for more */
+    int POSTIntervalMilliseconds = 2000;
+    // FIXME(yangtuo250): C++11 random cannot properly run on AARCH64
+    // // std::tr1::random_device() rd;
+    // std::tr1::mt19937 gen;
+    // std::tr1::uniform_real<float> dis{std::tr1::uniform_real<float>(0, 1)};
 
     static size_t onWriteData(void* buffer, size_t size, size_t nmemb, void* lpVoid)
     {
@@ -277,7 +296,7 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
                 // std::cout << "[fetchThermalData DEBUG] Thermal string length: " << tempStr.length() << " match 4x"
                 //           << thermalSensorHeight << "x" << thermalSensorWidth << std::endl;
 
-                sensorDataMatrix dataMatrix(thermalSensorHeightNew, std::vector<float>(thermalSensorWidthNew, abzoluteZero));
+                sensorDataMatrix dataMatrix(thermalSensorHeightNew, std::vector<float>(thermalSensorWidthNew, ABZOLUTEZERO));
                 str2FloatMatrix(tempStr, dataMatrix);
                 // std::cout << "[fetchThermalData DEBUG] dataMatrix: height " << dataMatrix.size() << " width "
                 //           << dataMatrix[thermalSensorHeight - 1].size() << " first element " << dataMatrix[0][0]
@@ -290,7 +309,7 @@ class ThermalAlign : public cnstream::Module, public cnstream::ModuleCreator<The
                 enqueue(dataWithTime);
                 mtx.unlock();
 
-                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                std::this_thread::sleep_for(std::chrono::milliseconds(POSTIntervalMilliseconds));
             }
         }
         curl_easy_cleanup(pCurlHandle);

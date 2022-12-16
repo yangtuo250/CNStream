@@ -28,6 +28,7 @@
       "obj_filter_name": "PlateFilter",
       "preproc_name": "PreprocLprnet",
       "postproc_name": "PostprocLprnetOri",
+      "data_order": "NHWC",
       "model_input_pixel_format": "BGRA32",
       "threshold": 0.85,
       "device_id": 0

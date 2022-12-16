@@ -224,7 +224,7 @@ void CnOsd::DrawBox(cv::Mat image, const cv::Point& top_left, const cv::Point& b
 }
 
 void CnOsd::DrawText(cv::Mat image, const cv::Point& bottom_left, const std::string& text, const cv::Scalar& color,
-                     float scale, int* text_height) const
+                     float scale, int* text_height, bool background, int freeTypeCharSize) const
 {
     double txt_scale = CalcScale(image.cols, text_scale_) * scale;
     int txt_thickness = CalcThickness(image.cols, text_thickness_) * scale;
