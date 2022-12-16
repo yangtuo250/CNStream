@@ -29,6 +29,7 @@
 #include "cnfont.hpp"
 
 #define CLIP(x) x < 0 ? 0 : (x > 1 ? 1 : x)
+#define LABEL_CHAR_SIZE 28
 
 namespace cnstream
 {
@@ -111,11 +112,13 @@ CnOsd::CnOsd(const std::vector<std::string>& labels) : labels_(labels)
 
 void CnOsd::DrawLogo(cv::Mat image, std::string logo) const
 {
-    cv::Point logo_pos(5, image.rows - 5);
+    cv::Point logo_pos(30, 150);
     uint32_t scale = 1;
-    uint32_t thickness = 2;
-    cv::Scalar color(0, 0, 255);
-    cv::putText(image, logo, logo_pos, font_, scale, color, thickness);
+    cv::Scalar color(255, 0, 0);
+    // uint32_t thickness = 4;
+    // cv::putText(image, logo, logo_pos, font_, scale, color, thickness);
+    int text_height = 0;
+    DrawText(image, logo_pos, logo, color, scale, &text_height, false, 60);
 }
 
 void CnOsd::DrawLabel(cv::Mat image, const CNInferObjsPtr& objs_holder, std::vector<std::string> attr_keys) const
@@ -134,13 +137,14 @@ void CnOsd::DrawLabel(cv::Mat image, const CNInferObjsPtr& objs_holder, std::vec
         cv::Point bottom_right = corner.second;
         cv::Point bottom_left(top_left.x, bottom_right.y);
 
-        cv::Scalar color(0, 0, 0);
+        // cv::Scalar color(0, 0, 0);
+        cv::Scalar color(255, 0, 0);
 
         int label_id = GetLabelId(object->id);
 
-        if (LabelIsFound(label_id)) {
-            color = colors_[label_id];
-        }
+        // if (LabelIsFound(label_id)) {
+        //     color = colors_[label_id];
+        // }
 
         // Draw Detection window
         LOGD(OSD) << "Draw Bounding Box: "
@@ -151,7 +155,8 @@ void CnOsd::DrawLabel(cv::Mat image, const CNInferObjsPtr& objs_holder, std::vec
         // Draw Text label + score + track id
         std::string text;
         if (LabelIsFound(label_id)) {
-            text = labels_[label_id];
+            // text = labels_[label_id];
+            text = "";
         } else {
             text = "Label not found, id = " + std::to_string(label_id);
         }
@@ -163,7 +168,7 @@ void CnOsd::DrawLabel(cv::Mat image, const CNInferObjsPtr& objs_holder, std::vec
             text += " h:" + FloatToString(object->collection.Get<float>("height")) + "m";
         if (object->collection.HasValue("width")) text += " w:" + FloatToString(object->collection.Get<float>("width")) + "m";
         if (object->collection.HasValue("temperature"))
-            text += " " + FloatToString(object->collection.Get<float>("temperature")) + "C";
+            text += "衣服表面温度:" + FloatToString(object->collection.Get<float>("temperature")) + "度";
 
         if (!object->track_id.empty() && object->track_id != "-1") {
             text += " track_id: " + object->track_id;
@@ -171,24 +176,24 @@ void CnOsd::DrawLabel(cv::Mat image, const CNInferObjsPtr& objs_holder, std::vec
         } else {
             LOGD(OSD) << "Draw Label and Score: " << text;
         }
-        DrawText(image, bottom_left, text, color, 0.5);
+        int text_height = 0;
+        DrawText(image, bottom_left, text, color, 0.5, &text_height, true, LABEL_CHAR_SIZE);
 
         // draw secondary inference information
         int label_bottom_y = 0;
-        int text_height = 0;
         for (auto& key : attr_keys) {
             CNInferAttr infer_attr = object->GetAttribute(key);
             if (infer_attr.value < 0 || infer_attr.value > static_cast<int>(secondary_labels_.size()) - 1) {
                 std::string attr_value = object->GetExtraAttribute(key);
                 if (attr_value.empty()) continue;
                 std::string secondary_text = key + " : " + attr_value;
-                DrawText(image, top_left + cv::Point(0, label_bottom_y), secondary_text, color, 0.5, &text_height);
+                DrawText(image, top_left + cv::Point(0, label_bottom_y), secondary_text, color, 0.5, &text_height, true, LABEL_CHAR_SIZE);
             } else {
                 std::string secondary_label = secondary_labels_[infer_attr.value];
                 std::string secondary_score = std::to_string(infer_attr.score);
                 secondary_score = secondary_score.substr(0, std::min(size_t(4), secondary_score.size()));
                 std::string secondary_text = key + " : " + secondary_label + " score[" + secondary_score + "]";
-                DrawText(image, top_left + cv::Point(0, label_bottom_y), secondary_text, color, 0.5, &text_height);
+                DrawText(image, top_left + cv::Point(0, label_bottom_y), secondary_text, color, 0.5, &text_height, true, LABEL_CHAR_SIZE);
             }
             label_bottom_y += text_height;
         }
@@ -241,7 +246,7 @@ void CnOsd::DrawText(cv::Mat image, const cv::Point& bottom_left, const std::str
     } else {
         uint32_t text_h = 0, text_w = 0;
         char* str = const_cast<char*>(text.data());
-        cn_font_->GetTextSize(str, &text_w, &text_h);
+        cn_font_->GetTextSize(str, &text_w, &text_h, freeTypeCharSize);
         baseline = cn_font_->GetFontPixel() / 4;
         space_before = baseline / 2;
         text_size.height = text_h;
@@ -262,7 +267,7 @@ void CnOsd::DrawText(cv::Mat image, const cv::Point& bottom_left, const std::str
         label_top_left.x = image.cols - text_size.width;
     }
     // draw text background
-    cv::rectangle(image, label_top_left, label_bottom_right, color, CV_FILLED);
+    if (background) cv::rectangle(image, label_top_left, label_bottom_right, color, CV_FILLED);
     // draw text
     cv::Point text_left_bottom = label_top_left + cv::Point(space_before, label_height - baseline / 2 - txt_thickness / 2);
     cv::Scalar text_color = cv::Scalar(255, 255, 255) - color;
@@ -270,7 +275,11 @@ void CnOsd::DrawText(cv::Mat image, const cv::Point& bottom_left, const std::str
         cv::putText(image, text, text_left_bottom, font_, txt_scale, text_color, txt_thickness);
     } else {
         char* str = const_cast<char*>(text.data());
-        cn_font_->putText(image, str, text_left_bottom, text_color);
+        if (background) {
+            cn_font_->putText(image, str, text_left_bottom, text_color, freeTypeCharSize);
+        } else {
+            cn_font_->putText(image, str, bottom_left, text_color, freeTypeCharSize);
+        }
     }
     if (text_height) *text_height = text_size.height + baseline;
 }

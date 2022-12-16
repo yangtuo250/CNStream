@@ -131,7 +131,7 @@ bool CnFont::GetTextSize(char* text, uint32_t* width, uint32_t* height, int char
   }
   wchar_t* w_str;
   if (ToWchar(text, w_str) == -1) {
-    LOGE(OSD) << "[CnFont] [GetTextSize] [ToWchar] failed.";
+    // LOGE(OSD) << "[CnFont] [GetTextSize] [ToWchar] failed.";
     return -1;
   }
 
@@ -189,7 +189,7 @@ int CnFont::putText(cv::Mat& img, char* text, cv::Point pos, cv::Scalar color, i
 
   wchar_t* w_str;
   if (ToWchar(text, w_str) == -1) {
-    LOGE(OSD) << "[CnFont] [putText] [ToWchar] failed.";
+    // LOGE(OSD) << "[CnFont] [putText] [ToWchar] failed.";
     return -1;
   }
 

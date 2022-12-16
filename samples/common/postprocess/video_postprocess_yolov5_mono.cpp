@@ -261,13 +261,13 @@ bool VideoPostprocYolov5Mono::Execute(infer_server::InferData* output_data, cons
         obj->bbox.h = std::min(1.0f - obj->bbox.y, bottom - top);
 
         if (obj->bbox.h <= 0 || obj->bbox.w <= 0 || (obj->score < threshold_ && threshold_ > 0)) continue;
-        // calculate object distance and height
-        float distance, height, width;
-        LOGF_IF(DEMO, !estimateDistanceHeight(obj->bbox, distance, height, width))
-            << "\e[33mCannot get object distance and height\e[0m";
-        obj->collection.Add<float>("distance", distance);
-        obj->collection.Add<float>("height", height);
-        obj->collection.Add<float>("width", width);
+        // // calculate object distance and height
+        // float distance, height, width;
+        // LOGF_IF(DEMO, !estimateDistanceHeight(obj->bbox, distance, height, width))
+        //     << "\e[33mCannot get object distance and height\e[0m";
+        // obj->collection.Add<float>("distance", distance);
+        // obj->collection.Add<float>("height", height);
+        // obj->collection.Add<float>("width", width);
 
         std::lock_guard<std::mutex> objs_mutex(objs_holder->mutex_);
         objs.push_back(obj);
